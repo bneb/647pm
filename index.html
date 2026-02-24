@@ -719,39 +719,330 @@
     </div>
 
     <script>
-        /** AUDIO ENGINE **/
+        /** CHILLWAVE/MALLSOFT AUDIO ENGINE **/
         const audio = {
             ctx: null, playing: false, track: 0,
+            masterGain: null, filter: null, delay: null, lfo: null,
+            step: 0, nextNoteTime: 0,
             list: [
-                { n: "Q4_PIVOT_WAVE", m: [0, 2, 3, 5, 7, 9, 10], r: 110 },
-                { n: "SYNERGY_DRONE", m: [0, 2, 4, 5, 7, 9, 10], r: 130 },
-                { n: "OFFSITE_RETREAT", m: [0, 2, 4, 6, 7, 9, 11], r: 146 },
-                { n: "UNLIMITED_PTO", m: [0, 1, 3, 5, 7, 8, 10], r: 82 },
-                { n: "REPLY_ALL_VOID", m: [0, 2, 3, 5, 7, 8, 10], r: 98 }
+                // Washed Out vibes: hazy, dragged tempo, floating Maj9s, sparse syncopation
+                {
+                    n: "RETREAT_MEMORIES", c: [[5, 9, 16, 21], [4, 7, 14, 19], [2, 5, 12, 17], [0, 4, 11, 14]], b: 84,
+                    m: [16, null, null, 12, null, 14, null, 9, null, null, 12, null, 7, null, 9, null],
+                    l: [5, null, null, null, 4, null, null, 4, 2, null, 2, null, 0, null, null, null], // Walking down bass
+                    d: { k: [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0], s: [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0], h: [1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0] }, r: 130.81
+                },
+
+                // Tycho vibes: driving syncopation, lush Maj7/Min9 inversions, evolving pentatonic melodies
+                {
+                    n: "LUCID_SYNERGY", c: [[0, 7, 11, 16], [4, 11, 14, 19], [5, 9, 16, 21], [0, 7, 11, 14]], b: 92,
+                    m: [null, 11, null, 14, 19, null, null, 16, null, 11, 14, null, 12, null, 14, null],
+                    l: [0, null, null, null, 4, null, 4, null, 5, null, 5, null, 0, null, 0, null], // Bass Counter-Melody
+                    d: { k: [1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0], s: [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0], h: [1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1] }, r: 130.81
+                },
+
+                // Small Black vibes: punchy retro bass, Min11 chords, dancing arpeggios
+                {
+                    n: "VIRTUAL_PLAZA", c: [[0, 3, 10, 15], [5, 8, 15, 19], [7, 10, 17, 22], [5, 8, 12, 17]], b: 96,
+                    m: [15, null, 10, null, 17, null, 15, 10, 19, null, 15, null, 22, 19, 17, null],
+                    l: [0, null, null, 0, 5, null, null, null, 7, null, null, null, 5, null, 5, null], // Dancing bass
+                    d: { k: [1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0], s: [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0], h: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] }, r: 146.83
+                },
+
+                // Com Truise vibes: mid-tempo, thick bass-heavy minor progressions, 16th-note hi-hat trills
+                {
+                    n: "DIAL_UP_BLUES", c: [[9, 12, 19, 24], [5, 9, 16, 21], [7, 11, 17, 22], [4, 7, 14, 19]], b: 90,
+                    m: [null, 16, 12, null, 19, 16, null, 12, 19, null, 14, null, 11, 14, null, 16],
+                    l: [9, null, null, null, 5, null, null, null, 7, null, 7, null, 4, null, null, null], // Minor stomp
+                    d: { k: [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0], s: [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1], h: [1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1] }, r: 130.81
+                },
+
+                // Classic Vaporwave: suspended 4ths morphing into Maj7s
+                {
+                    n: "OFFLINE_AURA", c: [[0, 5, 7, 12], [0, 4, 7, 11], [5, 10, 12, 17], [5, 9, 12, 16]], b: 86,
+                    m: [12, null, 7, null, 9, null, 4, null, 14, null, 9, null, 12, null, 7, null],
+                    l: [0, null, null, null, 0, null, 0, null, 5, null, null, null, 5, null, 5, null], // Pedal point bass
+                    d: { k: [1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0], s: [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0], h: [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0] }, r: 130.81
+                },
+
+                // Advanced syncopation: ghost notes on the kick, offset snare
+                {
+                    n: "TAPE_FLUTTER", c: [[2, 5, 12, 17], [5, 9, 16, 21], [0, 4, 11, 16], [9, 12, 19, 24]], b: 92,
+                    m: [14, 9, null, 12, null, 16, null, 14, null, 11, null, 12, 16, null, null, 14],
+                    l: [2, null, 2, null, 5, null, null, 5, 0, null, 0, null, 9, null, null, null], // Funky syncopation
+                    d: { k: [1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0], s: [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0], h: [1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1] }, r: 130.81
+                },
+
+                // Lush dominant extensions (Maj9)
+                {
+                    n: "CUBICLE_DREAMS", c: [[5, 9, 16, 21], [5, 9, 16, 21], [4, 7, 14, 19], [4, 7, 14, 19]], b: 88,
+                    m: [16, null, 14, null, 16, null, 9, null, 14, null, 11, null, 9, null, 11, null],
+                    l: [5, null, null, null, 5, null, null, null, 4, null, null, null, 4, null, null, null], // Simple drone
+                    d: { k: [1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0], s: [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0], h: [1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0] }, r: 130.81
+                },
+
+                // Euphoric chillwave finish
+                {
+                    n: "ENDLESS_PTO", c: [[0, 7, 11, 16], [5, 12, 16, 21], [2, 9, 12, 17], [7, 14, 17, 23]], b: 85,
+                    m: [11, null, 9, null, 14, null, 11, null, 12, null, 9, null, 16, null, 12, null],
+                    l: [0, null, null, null, 5, null, 5, null, 2, null, 2, null, 7, null, null, 7], // Melodic walk
+                    d: { k: [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1], s: [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0], h: [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1] }, r: 130.81
+                }
             ],
-            init() { if (!this.ctx) this.ctx = new AudioContext(); this.loop(); },
-            toggle() { this.init(); this.playing = !this.playing; document.getElementById('play-btn').innerText = this.playing ? "■" : "►"; },
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new AudioContext();
+
+                    // Master routing
+                    this.masterGain = this.ctx.createGain();
+                    this.masterGain.gain.value = 0.6; // Slightly louder overall
+
+                    // Chillwave Filter sweep (LFO Modulated)
+                    this.filter = this.ctx.createBiquadFilter();
+                    this.filter.type = "lowpass";
+                    this.filter.frequency.value = 800; // Base cutoff
+                    this.filter.Q.value = 2.0; // slight resonance
+
+                    this.lfo = this.ctx.createOscillator();
+                    this.lfo.type = "sine";
+                    this.lfo.frequency.value = 0.1; // Slow 10 second sweep
+                    const lfoGain = this.ctx.createGain();
+                    lfoGain.gain.value = 600; // +/- 600Hz sweep
+                    this.lfo.connect(lfoGain);
+                    lfoGain.connect(this.filter.frequency);
+                    this.lfo.start();
+
+                    // Delay Reverb Network
+                    this.delay = this.ctx.createDelay();
+                    this.delay.delayTime.value = 0.375; // Dotted 8th note feel
+                    const feedback = this.ctx.createGain();
+                    feedback.gain.value = 0.35;
+
+                    this.filter.connect(this.delay);
+                    this.delay.connect(feedback);
+                    feedback.connect(this.delay);
+
+                    this.filter.connect(this.masterGain);
+                    this.delay.connect(this.masterGain);
+                    this.masterGain.connect(this.ctx.destination);
+
+                    // Start scheduler
+                    this.nextNoteTime = this.ctx.currentTime + 0.1;
+                    this.scheduler();
+                }
+            },
+            toggle() {
+                this.init();
+                this.playing = !this.playing;
+                document.getElementById('play-btn').innerText = this.playing ? "■" : "►";
+                if (this.playing) {
+                    this.ctx.resume();
+                    this.nextNoteTime = this.ctx.currentTime + 0.1;
+                }
+            },
             next() { this.track = (this.track + 1) % this.list.length; this.up(); },
             prev() { this.track = (this.track - 1 + this.list.length) % this.list.length; this.up(); },
             up() { document.getElementById('track-name').innerText = this.list[this.track].n; },
-            loop() {
-                if (this.playing && this.ctx.state === 'running') {
-                    let t = this.list[this.track];
-                    let note = t.m[Math.floor(Math.random() * 7)];
-                    let f = t.r * Math.pow(2, note / 12);
-                    let o = this.ctx.createOscillator(), g = this.ctx.createGain();
-                    o.type = Math.random() > 0.5 ? 'triangle' : 'sine';
-                    o.frequency.value = f;
-                    g.gain.setValueAtTime(0.06, this.ctx.currentTime);
-                    g.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 3.5);
 
-                    let filter = this.ctx.createBiquadFilter();
-                    filter.type = "lowpass"; filter.frequency.value = 800;
+            playSynth(chord, rootFreq, time) {
+                // Play a lush Pad
+                chord.forEach(interval => {
+                    const osc = this.ctx.createOscillator();
+                    const env = this.ctx.createGain();
+                    osc.type = Math.random() > 0.5 ? 'sawtooth' : 'triangle';
+                    // Detune for that worn VHS feel
+                    osc.frequency.value = rootFreq * Math.pow(2, interval / 12) * (1 + (Math.random() * 0.008 - 0.004));
+                    env.gain.setValueAtTime(0, time);
+                    env.gain.linearRampToValueAtTime(0.04, time + 0.5);
+                    env.gain.exponentialRampToValueAtTime(0.001, time + 3.0);
+                    osc.connect(env);
+                    env.connect(this.filter);
+                    osc.start(time);
+                    osc.stop(time + 3.0);
+                });
 
-                    o.connect(filter); filter.connect(g); g.connect(this.ctx.destination);
-                    o.start(); o.stop(this.ctx.currentTime + 3.5);
+                // Play Sub Bass (root note)
+                const bassOsc = this.ctx.createOscillator();
+                const bassEnv = this.ctx.createGain();
+                bassOsc.type = 'square';
+                bassOsc.frequency.value = rootFreq * Math.pow(2, chord[0] / 12) / 2; // Drop 1 octave
+                bassEnv.gain.setValueAtTime(0, time);
+                bassEnv.gain.linearRampToValueAtTime(0.12, time + 0.1);
+                bassEnv.gain.exponentialRampToValueAtTime(0.001, time + 2.0);
+                const bassFilter = this.ctx.createBiquadFilter();
+                bassFilter.type = 'lowpass';
+                bassFilter.frequency.value = 150; // Keep it deep
+                bassOsc.connect(bassEnv);
+                bassEnv.connect(bassFilter);
+                bassFilter.connect(this.masterGain);
+                bassOsc.start(time);
+                bassOsc.stop(time + 2.0);
+            },
+            playMelody(interval, rootFreq, time) {
+                // Plucky, warm synth lead (Tycho/Washed Out style) instead of a droning beep
+                const osc1 = this.ctx.createOscillator();
+                const osc2 = this.ctx.createOscillator();
+                const env = this.ctx.createGain();
+
+                osc1.type = 'triangle'; // Richer harmonic content than sine
+                osc2.type = 'sine'; // Smooth the edge
+
+                const freq = rootFreq * Math.pow(2, interval / 12) * 2; // Up 1 octave
+                osc1.frequency.setValueAtTime(freq, time);
+                osc2.frequency.setValueAtTime(freq * 1.002, time); // 2 cents chorus spread
+
+                // Shorter, pluckier amplitude envelope to completely remove the "drone"
+                env.gain.setValueAtTime(0, time);
+                env.gain.linearRampToValueAtTime(0.08, time + 0.02); // Fast attack
+                env.gain.exponentialRampToValueAtTime(0.005, time + 0.5); // Plucky decay
+                env.gain.linearRampToValueAtTime(0.0001, time + 0.6);
+
+                // Dedicated melody filter for a muted, lush pluck
+                const pluckFilter = this.ctx.createBiquadFilter();
+                pluckFilter.type = 'lowpass';
+                pluckFilter.frequency.setValueAtTime(freq * 3.5, time); // Start bright
+                pluckFilter.frequency.exponentialRampToValueAtTime(freq * 0.5, time + 0.3); // Snap down
+
+                osc1.connect(env);
+                osc2.connect(env);
+                env.connect(pluckFilter);
+                pluckFilter.connect(this.filter); // Route into the main tape delay/wow filter
+
+                osc1.start(time);
+                osc2.start(time);
+                osc1.stop(time + 0.6);
+                osc2.stop(time + 0.6);
+            },
+            playBass(rootFreq, interval, time, duration = 0.6) {
+                // Deep sub bass locking in with the kick
+                const bassOsc = this.ctx.createOscillator();
+                const bassEnv = this.ctx.createGain();
+                bassOsc.type = 'square';
+
+                const freq = rootFreq * Math.pow(2, interval / 12) / 2; // Drop 1 octave
+                bassOsc.frequency.setValueAtTime(freq, time);
+
+                bassEnv.gain.setValueAtTime(0, time);
+                bassEnv.gain.linearRampToValueAtTime(0.12, time + 0.05); // Fast punch
+                bassEnv.gain.exponentialRampToValueAtTime(0.001, time + duration);
+
+                const bassFilter = this.ctx.createBiquadFilter();
+                bassFilter.type = 'lowpass';
+                bassFilter.frequency.setValueAtTime(150, time); // Keep it deep
+
+                bassOsc.connect(bassEnv);
+                bassEnv.connect(bassFilter);
+                bassFilter.connect(this.masterGain);
+
+                bassOsc.start(time);
+                bassOsc.stop(time + duration);
+            },
+            playDrum(type, time, velocity = 1.0) {
+                const env = this.ctx.createGain();
+                env.connect(this.masterGain);
+
+                if (type === 'kick') {
+                    const osc = this.ctx.createOscillator();
+                    osc.connect(env);
+                    osc.frequency.setValueAtTime(120, time);
+                    osc.frequency.exponentialRampToValueAtTime(0.01, time + 0.3);
+                    env.gain.setValueAtTime(0.9 * velocity, time);
+                    env.gain.exponentialRampToValueAtTime(0.01, time + 0.3);
+                    osc.start(time);
+                    osc.stop(time + 0.3);
+                } else if (type === 'snare') {
+                    // Refined snare: triangle tonal body + noise wire burst
+                    // Snare body
+                    const osc = this.ctx.createOscillator();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(250, time);
+                    osc.frequency.exponentialRampToValueAtTime(100, time + 0.1);
+                    env.gain.setValueAtTime(0.5 * velocity, time);
+                    env.gain.exponentialRampToValueAtTime(0.01, time + 0.2);
+                    osc.connect(env);
+
+                    // Snare wire (noise via high pitched square)
+                    const noiseOsc = this.ctx.createOscillator();
+                    noiseOsc.type = 'square';
+                    noiseOsc.frequency.value = 1200;
+                    const noiseEnv = this.ctx.createGain();
+                    noiseEnv.gain.setValueAtTime(0.12 * velocity, time);
+                    noiseEnv.gain.exponentialRampToValueAtTime(0.001, time + 0.15);
+                    const snareFilter = this.ctx.createBiquadFilter();
+                    snareFilter.type = 'highpass';
+                    snareFilter.frequency.value = 1000;
+                    noiseOsc.connect(snareFilter);
+                    snareFilter.connect(noiseEnv);
+                    noiseEnv.connect(this.masterGain);
+
+                    noiseOsc.start(time);
+                    noiseOsc.stop(time + 0.2);
+                    osc.start(time);
+                    osc.stop(time + 0.2);
+                } else if (type === 'hihat') {
+                    // Short burst of high freq square noise
+                    const osc = this.ctx.createOscillator();
+                    osc.type = 'square';
+                    osc.frequency.value = 4000;
+                    // Dynamics: velocity determines hi-hat loudness
+                    env.gain.setValueAtTime(0.06 * velocity, time);
+                    env.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
+                    const hpFilter = this.ctx.createBiquadFilter();
+                    hpFilter.type = 'highpass';
+                    hpFilter.frequency.value = 5000;
+                    osc.connect(hpFilter);
+                    hpFilter.connect(env);
+                    osc.start(time);
+                    osc.stop(time + 0.2);
                 }
-                setTimeout(() => this.loop(), 800 + Math.random() * 1200);
+            },
+            scheduler() {
+                if (this.playing) {
+                    while (this.nextNoteTime < this.ctx.currentTime + 0.1) {
+                        const tInfo = this.list[this.track];
+                        // 16th note sequencing
+                        const secondsPer16th = (60.0 / tInfo.b) / 4;
+
+                        // Sequence Length: 16 steps (1 bar)
+                        const step16 = this.step % 16;
+                        // Chord Progression: Changes every 16 steps
+                        const bar = Math.floor(this.step / 16) % tInfo.c.length;
+
+                        // Play Chord on the downbeat of each bar
+                        if (step16 === 0) {
+                            this.playSynth(tInfo.c[bar], tInfo.r, this.nextNoteTime);
+                        }
+
+                        // Play Melody from array (Filtered Pluck)
+                        const melodyInterval = tInfo.m[step16];
+                        if (melodyInterval !== null) {
+                            this.playMelody(melodyInterval, tInfo.r, this.nextNoteTime);
+                        }
+
+                        // Read from dynamic bass counter-melody array
+                        const bassInterval = tInfo.l[step16];
+                        if (bassInterval !== null) {
+                            this.playBass(tInfo.r, bassInterval, this.nextNoteTime, 0.6);
+                        }
+
+                        // Read from dynamic drum matrix inside the track
+                        if (tInfo.d.k[step16]) {
+                            this.playDrum('kick', this.nextNoteTime);
+                        }
+
+                        if (tInfo.d.s[step16]) this.playDrum('snare', this.nextNoteTime);
+
+                        // Humanize hi-hat velocity
+                        if (tInfo.d.h[step16]) {
+                            const velocity = step16 % 4 === 0 ? 1.0 : (step16 % 2 === 0 ? 0.7 : 0.4);
+                            this.playDrum('hihat', this.nextNoteTime, velocity);
+                        }
+
+                        this.nextNoteTime += secondsPer16th;
+                        this.step++;
+                    }
+                }
+                setTimeout(() => this.scheduler(), 25);
             }
         };
 
