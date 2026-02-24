@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>647PM // SIMSITTING_XP_V2.0</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Tahoma:wght@400;700&family=Trebuchet+MS:wght@400;700&family=Space+Mono&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            /* Midwestern Office Liminal Depressive Palette */
+            --xp-blue: #707571;
+            --xp-blue-grad-top: #858b87;
+            --xp-blue-grad-bot: #5b625c;
+            --xp-bg: #d7d7cd;
+            --xp-toolbar: #e0e0d6;
+
+            /* Desaturated Gradients */
+            --jazz-teal: #788279;
+            --jazz-purple: #5c5a53;
+            --sunset-orange: #9c9483;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            font-family: 'Tahoma', sans-serif;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* Stylized "Bliss" Desktop Background (Jazz Purple sky, Teal hills) */
+        .desktop-bg {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, #d4d2c8 0%, #b3b0a6 100%);
+            z-index: 0;
+        }
+
+        /* Subtle Fluorescent/CRT scanline overlay */
+        .desktop-bg::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.02) 1px, transparent 1px, transparent 2px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* CRT Filter & Scanlines */
+        #crt::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%),
+                linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            z-index: 9999;
+            background-size: 100% 3px, 3px 100%;
+            pointer-events: none;
+        }
+
+        /* Simulated Cursor */
+        #cursor {
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            background: url('https://cur.cursors-4u.net/windows/win-6/win518.cur'), auto;
+            background-repeat: no-repeat;
+            z-index: 10000;
+            pointer-events: none;
+            transition: top 0.6s cubic-bezier(0.45, 0, 0.55, 1), left 0.6s cubic-bezier(0.45, 0, 0.55, 1);
+            transform-origin: top left;
+        }
+
+        #cursor.clicking {
+            transform: scale(0.85);
+        }
+
+        /* Desktop Icons */
+        .desktop-icons-container {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 10;
+        }
+
+        .desktop-icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 70px;
+            cursor: pointer;
+        }
+
+        .icon-img {
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.4);
+            margin-bottom: 4px;
+        }
+
+        .icon-text {
+            color: white;
+            font-size: 11px;
+            text-shadow: 1px 1px 2px black;
+            text-align: center;
+        }
+
+        .desktop-icon.selected .icon-img {
+            filter: brightness(1.2) drop-shadow(0 0 5px white);
+        }
+
+        .desktop-icon.selected .icon-text {
+            background: #003ED2;
+            color: white;
+        }
+
+        /* XP Windows Base */
+        .window {
+            position: absolute;
+            background: var(--xp-bg);
+            border: 1px solid var(--xp-blue-grad-bot);
+            border-radius: 7px 7px 0 0;
+            box-shadow: 3px 3px 12px rgba(0, 0, 0, 0.6);
+            display: none;
+            z-index: 100;
+            flex-direction: column;
+            overflow: hidden;
+            opacity: 0;
+            transform: scale(0.95);
+            transition: opacity 0.2s, transform 0.2s;
+        }
+
+        .active-win {
+            display: flex;
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .title-bar {
+            background: linear-gradient(to bottom, var(--xp-blue-grad-top) 0%, var(--xp-blue) 10%, var(--xp-blue-grad-bot) 100%);
+            color: white;
+            padding: 4px 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Tahoma', 'Verdana', sans-serif;
+            font-size: 11px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .title-btns {
+            display: flex;
+            gap: 4px;
+        }
+
+        .win-close-btn {
+            background: linear-gradient(to bottom, #9a9a9a 0%, #7a7a7a 15%, #5a5a5a 100%);
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            width: 18px;
+            height: 18px;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: default;
+            box-shadow: inset 1px 1px 1px rgba(255, 255, 255, 0.5);
+        }
+
+        .win-close-btn.sim-active {
+            filter: brightness(0.8);
+        }
+
+        /* App Specific Chrome */
+        .worsed-toolbar,
+        .outlook-toolbar,
+        .decel-toolbar {
+            background: var(--xp-toolbar);
+            border-bottom: 1px solid #c5c2b8;
+            padding: 4px;
+            display: flex;
+            gap: 10px;
+            font-size: 11px;
+            box-shadow: inset 0 -1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .content-area {
+            flex: 1;
+            background: #fff;
+            overflow: auto;
+            position: relative;
+            border-top: 1px solid #7F9DB9;
+        }
+
+        /* Worsed (Word-like) */
+        .worsed-layout {
+            background: #808080;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            overflow: auto;
+            flex: 1;
+        }
+
+        .worsed-page {
+            background: white;
+            width: 80%;
+            min-height: 200px;
+            padding: 20px;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+            font-family: 'Times New Roman', serif;
+            font-size: 14px;
+        }
+
+        /* Decel (Excel-like) */
+        .decel-grid {
+            display: grid;
+            grid-template-columns: 30px repeat(5, 1fr);
+            font-size: 11px;
+            font-family: 'Tahoma', 'Verdana', sans-serif;
+        }
+
+        .decel-cell {
+            border-right: 1px solid #ccc;
+            border-bottom: 1px solid #ccc;
+            padding: 2px 4px;
+            min-height: 18px;
+        }
+
+        .decel-header {
+            background: #ece9d8;
+            text-align: center;
+            border-right: 1px solid #888;
+            border-bottom: 1px solid #888;
+            border-top: 1px solid #fff;
+            border-left: 1px solid #fff;
+        }
+
+        /* Outlook Depress */
+        .outlook-layout {
+            display: flex;
+            flex: 1;
+            height: 100%;
+        }
+
+        .outlook-sidebar {
+            width: 120px;
+            background: #D4DEED;
+            border-right: 1px solid #7F9DB9;
+            padding: 5px;
+            font-size: 11px;
+        }
+
+        .outlook-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .outlook-list {
+            height: 80px;
+            background: white;
+            border-bottom: 1px solid #7F9DB9;
+            overflow: auto;
+        }
+
+        .outlook-item {
+            padding: 4px;
+            font-size: 11px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+            cursor: default;
+        }
+
+        .outlook-item.open {
+            background: #316AC5;
+            color: white;
+        }
+
+        .outlook-reading-pane {
+            flex: 1;
+            padding: 10px;
+            background: white;
+            font-family: 'Arial';
+            font-size: 12px;
+            overflow: auto;
+        }
+
+        /* Solitary App */
+        .sol-card {
+            width: 45px;
+            height: 65px;
+            background: white;
+            border: 1px solid black;
+            border-radius: 4px;
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+            font-family: 'Tahoma', 'Verdana', sans-serif;
+            color: black;
+            flex-direction: column;
+        }
+
+        .sol-card.red {
+            color: red;
+        }
+
+        .sol-card-mini {
+            position: absolute;
+            top: 2px;
+            left: 4px;
+            font-size: 10px;
+            font-weight: bold;
+            line-height: 1;
+            text-align: center;
+        }
+
+        .sol-card-large {
+            font-size: 24px;
+            line-height: 1;
+        }
+
+        /* WMP Media Player Stylized */
+        #wmp-box {
+            position: fixed;
+            bottom: 40px;
+            left: 20px;
+            width: 260px;
+            background: linear-gradient(to bottom, #E6E6E6 0%, #B8B8B8 100%);
+            border: 1px solid #888;
+            border-radius: 12px;
+            padding: 8px;
+            z-index: 1001;
+            box-shadow: -2px 5px 15px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            border-top: 1px solid #fff;
+            border-left: 1px solid #fff;
+        }
+
+        .wmp-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            color: #111;
+            font-weight: bold;
+            font-size: 11px;
+            font-family: 'Tahoma', 'Verdana', sans-serif;
+        }
+
+        .wmp-screen {
+            height: 60px;
+            background: #000;
+            border: 2px inset #999;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .wmp-visualizer {
+            position: absolute;
+            inset: 0;
+            opacity: 0.3;
+            background: repeating-linear-gradient(45deg, var(--jazz-teal) 0%, transparent 5%, var(--jazz-purple) 10%, transparent 15%);
+            animation: move-vis 20s linear infinite;
+        }
+
+        @keyframes move-vis {
+            0% {
+                background-position: 0 0;
+            }
+
+            100% {
+                background-position: -200px 0;
+            }
+        }
+
+        .wmp-text {
+            position: relative;
+            color: #d1b877;
+            /* Sickly ambient amber */
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            z-index: 2;
+            text-shadow: 1px 1px 0px #000, 0 0 4px #d1b877;
+            opacity: 0.9;
+            animation: flicker 4s infinite alternate;
+        }
+
+        @keyframes flicker {
+
+            0%,
+            19%,
+            21%,
+            23%,
+            25%,
+            54%,
+            56%,
+            100% {
+                opacity: 0.9;
+            }
+
+            20%,
+            24%,
+            55% {
+                opacity: 0.4;
+            }
+        }
+
+        .wmp-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .wmp-btn {
+            background: linear-gradient(to bottom, #fff 0%, #D4D4D4 100%);
+            border: 1px solid #888;
+            border-radius: 50%;
+            height: 30px;
+            width: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            font-weight: bold;
+            color: #333;
+            cursor: default;
+        }
+
+        .wmp-btn-play {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(to bottom, #dbe9ff 0%, #6891d4 100%);
+            border: 1px solid #3c5d94;
+            color: white;
+            text-shadow: 1px 1px 1px #000;
+        }
+
+        /* Start bar */
+        #taskbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 30px;
+            background: linear-gradient(to bottom, #245edb 0%, #003cc2 100%);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            padding: 0 5px;
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.4);
+        }
+
+        #start-btn {
+            background: linear-gradient(to bottom, #398e29 0%, #296f1b 100%);
+            border: 1px solid #1a4a11;
+            border-radius: 0 10px 10px 0;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            font-family: 'Trebuchet MS';
+            font-style: italic;
+            padding: 2px 15px 2px 5px;
+            margin-left: -5px;
+            box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+    </style>
+</head>
+
+<body id="crt">
+
+    <div class="desktop-bg"></div>
+
+    <div id="cursor"></div>
+
+    <!-- Desktop Icons -->
+    <div class="desktop-icons-container">
+        <div class="desktop-icon" id="icon-solitary">
+            <div class="icon-img"
+                style="background: linear-gradient(45deg, #008000, #fff); color: black; display:flex; align-items:center; justify-content:center; font-family:sans-serif; font-weight:bold; font-size: 20px;">
+                ♠</div>
+            <div class="icon-text">Solitary</div>
+        </div>
+        <div class="desktop-icon" id="icon-worsed">
+            <div class="icon-img"
+                style="background: linear-gradient(45deg, #003ED2, #fff); color: white; display:flex; align-items:center; justify-content:center; font-family:serif; font-weight:bold; font-size: 20px;">
+                W</div>
+            <div class="icon-text">Worsed</div>
+        </div>
+        <div class="desktop-icon" id="icon-decel">
+            <div class="icon-img"
+                style="background: linear-gradient(45deg, #2DA731, #fff); color: white; display:flex; align-items:center; justify-content:center; font-family:sans-serif; font-weight:bold; font-size: 20px;">
+                X</div>
+            <div class="icon-text">Decel</div>
+        </div>
+        <div class="desktop-icon" id="icon-outlook">
+            <div class="icon-img"
+                style="background: linear-gradient(45deg, #a39b82, #d1d1d1); color: #333; display:flex; align-items:center; justify-content:center; font-family:sans-serif; font-weight:bold; font-size: 20px; border: 1px solid #999;">
+                O</div>
+            <div class="icon-text" style="color: #4a4a4a; text-shadow: none;">Outlook<br>Depress</div>
+        </div>
+        <div class="desktop-icon" id="icon-ignorer">
+            <div class="icon-img"
+                style="background: linear-gradient(45deg, #1f427d, #d1d1d1); color: #333; display:flex; align-items:center; justify-content:center; font-family:serif; font-weight:bold; font-size: 20px; border: 1px solid #999;">
+                e</div>
+            <div class="icon-text" style="color: #4a4a4a; text-shadow: none;">Internal<br>Ignorer</div>
+        </div>
+    </div>
+
+    <!-- WMP Media Player -->
+    <div id="wmp-box">
+        <div class="wmp-header"><span>Windowless Media Player</span><span style="font-size: 9px;">AM_RCV</span></div>
+        <div class="wmp-screen">
+            <div class="wmp-visualizer"></div>
+            <div class="wmp-text" id="track-name">Q4_PIVOT_WAVE</div>
+            <div class="wmp-text" style="font-size: 8px; margin-top: 4px;">00:00 / ENDLESS</div>
+        </div>
+        <div class="wmp-controls">
+            <button class="wmp-btn" onclick="audio.prev()">|&lt;&lt;</button>
+            <button class="wmp-btn-play" id="play-btn" onclick="audio.toggle()">►</button>
+            <button class="wmp-btn" onclick="audio.next()">&gt;&gt;|</button>
+        </div>
+    </div>
+
+    <!-- Solitary App -->
+    <div id="win-solitary" class="window" style="width: 400px; height: 320px;">
+        <div class="title-bar">
+            <span>Solitary</span>
+            <div class="title-btns">
+                <div class="win-close-btn" data-close="win-solitary">X</div>
+            </div>
+        </div>
+        <div class="worsed-toolbar">
+            <span>Game</span><span>Help</span>
+        </div>
+        <div class="content-area" style="background: #008000; position: relative;" id="sol-field">
+        </div>
+    </div>
+
+    <!-- Worsed Word Processor -->
+    <div id="win-worsed" class="window" style="width: 500px; height: 350px;">
+        <div class="title-bar"><span>Document1 - Worsed</span>
+            <div class="title-btns">
+                <div class="win-close-btn" data-close="win-worsed">X</div>
+            </div>
+        </div>
+        <div class="worsed-toolbar">
+            <span>File</span><span>Edit</span><span>View</span><span>Insert</span><span>Format</span>
+        </div>
+        <div class="worsed-layout">
+            <div class="worsed-page" id="worsed-body"></div>
+        </div>
+    </div>
+
+    <!-- Decel Spreadsheet -->
+    <div id="win-decel" class="window" style="width: 520px; height: 300px;">
+        <div class="title-bar"><span>Book1 - Decel</span>
+            <div class="title-btns">
+                <div class="win-close-btn" data-close="win-decel">X</div>
+            </div>
+        </div>
+        <div class="decel-toolbar">
+            <span>File</span><span>Edit</span><span>Data</span>
+        </div>
+        <div class="content-area decel-grid" id="decel-grid"></div>
+    </div>
+
+    <!-- Outlook Depress -->
+    <div id="win-outlook" class="window" style="width: 580px; height: 400px;">
+        <div class="title-bar"><span>Inbox - Outlook Depress</span>
+            <div class="title-btns">
+                <div class="win-close-btn" data-close="win-outlook">X</div>
+            </div>
+        </div>
+        <div class="outlook-toolbar">
+            <span>New</span><span>Send/Receive</span><span>Find</span>
+        </div>
+        <div class="outlook-layout">
+            <div class="outlook-sidebar">
+                <div style="font-weight: bold; margin-bottom: 5px;">Mail Folders</div>
+                <div id="sidebar-inbox" style="font-weight: bold;">Inbox (1)</div>
+                <div>Drafts</div>
+                <div>Outbox</div>
+                <div id="sidebar-sent">Sent Items</div>
+                <div>Deleted Items</div>
+                <div style="font-weight: bold; margin-top: 15px; margin-bottom: 5px;">Views</div>
+                <div id="sidebar-calendar">Calendar</div>
+            </div>
+            <div class="outlook-main" id="outlook-main-pane">
+                <div class="outlook-list">
+                    <div class="outlook-item" id="inbox-msg-1">
+                        <div style="width: 15px;">✉️</div>
+                        <div style="flex: 1; font-weight: bold;">System</div>
+                        <div style="flex: 2; font-weight: bold;">Loading...</div>
+                        <div style="width: 60px;">-</div>
+                    </div>
+                </div>
+                <div class="outlook-reading-pane" id="outlook-reader">
+                    <div style="color: #666; font-style: italic; padding: 20px;">No message selected.</div>
+                </div>
+            </div>
+            <div class="outlook-main" id="outlook-calendar-view"
+                style="display: none; padding: 10px; background: white; overflow: auto; position: relative; font-family: 'Tahoma', sans-serif;">
+            </div>
+        </div>
+    </div>
+
+    <!-- Internal Ignorer -->
+    <div id="win-ignorer" class="window" style="width: 700px; height: 500px;">
+        <div class="title-bar"><span>The Not Your Times - Internal Ignorer</span>
+            <div class="title-btns">
+                <div class="win-close-btn" data-close="win-ignorer">X</div>
+            </div>
+        </div>
+        <div class="outlook-toolbar" style="border-bottom: 2px solid #ccc;">
+            <span>Back</span><span>Forward</span><span>Stop</span><span>Refresh</span><span>Home</span>
+        </div>
+        <div
+            style="background: #fff; display: flex; align-items: center; padding: 4px 10px; border-bottom: 1px solid #999; font-size:11px;">
+            Address <input type="text" value="http://www.notyourtimes.com"
+                style="flex:1; margin-left:10px; height:18px; border:1px solid #7F9DB9; padding-left: 5px;" readonly>
+        </div>
+        <div class="content-area" id="ignorer-content"
+            style="padding: 20px; font-family: 'NYT Imperial', 'Cheltenham Roman', 'Georgia', serif; overflow: auto; background: #fdfdfd; display:flex; flex-direction:column; align-items:center;">
+            <div
+                style="width: 80%; border-bottom: 3px double #000; padding-bottom: 10px; margin-bottom: 20px; text-align:center;">
+                <h1
+                    style="font-family: 'Old English Text MT', 'Engravers Old English BT', 'Cloister Black', 'UnifrakturMaguntia', serif; font-size: 42px; font-weight: normal; margin: 0; padding: 0;">
+                    The Not Your Times
+                </h1>
+                <div
+                    style="font-size: 11px; font-family: 'Franklin Gothic Medium', 'Franklin Gothic', 'Arial', sans-serif; text-transform: uppercase; color: #555; margin-top: 5px;">
+                    "All the news that fits in print"</div>
+            </div>
+            <div style="display:flex; gap: 20px; width: 80%;">
+                <div style="flex: 2;">
+                    <h2
+                        style="font-family: 'Cheltenham', 'Georgia', serif; font-size: 24px; font-weight: normal; margin-top: 0;">
+                        Invasion Imminent:
+                        "Sources" Confirm WMDs Found in Sandbox</h2>
+                    <h3
+                        style="font-size: 13px; font-family: 'Franklin Gothic', 'Arial', sans-serif; font-weight: bold; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 15px;">
+                        By MARGERINE DOWDY</h3>
+                    <p style="font-size: 14px; line-height: 1.5; color: #111;">WASHINGTON — Anonymous officials from
+                        three different three-letter agencies confirmed early Tuesday that credible, undeniable, and
+                        totally-not-fabricated evidence points to the rapid militarization of a playground sandbox in an
+                        undisclosed hostile nation.</p>
+                    <p style="font-size: 14px; line-height: 1.5; color: #111;">"We have satellite imagery showing people
+                        moving dirt from one side of the box to the other," stated a high-ranking official who asked not
+                        to be named because he is not authorized to speak on the record, and also because he made it up.
+                        "This is classic enrichment activity. We cannot afford to wait for a smoking gun that could come
+                        in the form of a plastic shovel."</p>
+                    <p style="font-size: 14px; line-height: 1.5; color: #111;">The administration is expected to ask
+                        Congress to authorize a $4 trillion preemptive stabilization effort, assuring the public that
+                        the operation will pay for itself and be over in "six weeks, tops."</p>
+                </div>
+                <div style="flex: 1; border-left: 1px solid #ccc; padding-left: 20px;">
+                    <div
+                        style="border: 1px solid #000; background: #e6f2ff; padding: 15px; text-align: center; font-family: 'Tahoma', sans-serif;">
+                        <h4 style="margin-top:0; color: #003399; font-size: 18px;">JUMBO MORTGAGES!</h4>
+                        <p style="font-size: 12px; margin-bottom: 15px;">No Income? No Job? No Assets? <b
+                                style="display:block; font-size:16px; margin-top:5px;">NO PROBLEM!</b></p>
+                        <p
+                            style="font-size: 11px; background: yellow; display: inline-block; padding: 5px; font-weight: bold; border: 1px dashed red;">
+                            Adjustable Rate starting at 1.5%*</p>
+                        <p style="font-size: 9px; color: #666; margin-top: 15px; text-align:left;">*Rate jumps to 14.5%
+                            after 6 months. Prepayment penalty applies. You will lose your house.</p>
+                        <button
+                            style="margin-top: 10px; background: #003399; color: white; border: 1px solid black; padding: 5px 10px; cursor: pointer; font-weight:bold;">APPLY
+                            NOW</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- XP Taskbar -->
+    <div id="taskbar">
+        <div id="start-btn">
+            <div style="font-style: normal; font-family: tahoma; color: #ff5500;">❖</div> start
+        </div>
+        <div style="flex: 1; display:flex; gap: 5px; padding-left: 10px;" id="taskbar-apps"></div>
+        <div
+            style="background: #0099e6; color: white; padding: 0 10px; height: 100%; display:flex; align-items:center; font-size: 11px; border-left: 1px solid #00138C; box-shadow: inset 1px 0 2px rgba(255,255,255,0.4);">
+            6:47 PM
+        </div>
+    </div>
+
+    <script>
+        /** AUDIO ENGINE **/
+        const audio = {
+            ctx: null, playing: false, track: 0,
+            list: [
+                { n: "Q4_PIVOT_WAVE", m: [0, 2, 3, 5, 7, 9, 10], r: 110 },
+                { n: "SYNERGY_DRONE", m: [0, 2, 4, 5, 7, 9, 10], r: 130 },
+                { n: "OFFSITE_RETREAT", m: [0, 2, 4, 6, 7, 9, 11], r: 146 },
+                { n: "UNLIMITED_PTO", m: [0, 1, 3, 5, 7, 8, 10], r: 82 },
+                { n: "REPLY_ALL_VOID", m: [0, 2, 3, 5, 7, 8, 10], r: 98 }
+            ],
+            init() { if (!this.ctx) this.ctx = new AudioContext(); this.loop(); },
+            toggle() { this.init(); this.playing = !this.playing; document.getElementById('play-btn').innerText = this.playing ? "■" : "►"; },
+            next() { this.track = (this.track + 1) % this.list.length; this.up(); },
+            prev() { this.track = (this.track - 1 + this.list.length) % this.list.length; this.up(); },
+            up() { document.getElementById('track-name').innerText = this.list[this.track].n; },
+            loop() {
+                if (this.playing && this.ctx.state === 'running') {
+                    let t = this.list[this.track];
+                    let note = t.m[Math.floor(Math.random() * 7)];
+                    let f = t.r * Math.pow(2, note / 12);
+                    let o = this.ctx.createOscillator(), g = this.ctx.createGain();
+                    o.type = Math.random() > 0.5 ? 'triangle' : 'sine';
+                    o.frequency.value = f;
+                    g.gain.setValueAtTime(0.06, this.ctx.currentTime);
+                    g.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 3.5);
+
+                    let filter = this.ctx.createBiquadFilter();
+                    filter.type = "lowpass"; filter.frequency.value = 800;
+
+                    o.connect(filter); filter.connect(g); g.connect(this.ctx.destination);
+                    o.start(); o.stop(this.ctx.currentTime + 3.5);
+                }
+                setTimeout(() => this.loop(), 800 + Math.random() * 1200);
+            }
+        };
+
+        /** SEQUENCER DATA **/
+        const memos = [
+            "Meeting Notes 10/14:\n\n- Discussed standardizing the cross-functional workflow metrics.\n- Todd brought up that the Q3 deliverables are blocked by the legacy system.\n- Sarah will circle back after she syncs with stakeholders.\n\nAction item: Schedule follow-up meeting to ideate on a pivot strategy.",
+            "Subject: Fantasy Football Rule Change\n\nHey guys, just writing this down so I don't forget.\nSince Greg keeps forgetting to set his lineup, we're implementing a weekly fine of $5.\n\nAlso, whoever took my stapler from desk 4B, please put it back. It has my name on it.",
+            "Daily Standup update:\n\nBlocked on getting sign-off from compliance on the new onboarding decks.\nSent an email to Barbara on Tuesday, still waiting to hear back. Might send a follow-up ping this afternoon.\nOtherwise just catching up on my mandatory compliance training videos.",
+            "PERFORMANCE REVIEW DRAFT (DO NOT SEND)\n\nI feel my contributions to the synergistic growth of the team this year have been satisfactory.\nI successfully maintained the data pipelines with only 3 major compliance incidents.\nI would like to request that my desk be moved further from the printer, the noise is detracting from my flow state.",
+            "Potluck Sign-up Sheet Details:\n\n- Jim: Potato Salad (he promised no organic raisins this time)\n- Pam: Paper plates/napkins\n- Michael: 'Surprise'\n*Note: Please do not bring fish to reheat in the breakroom microwave.*",
+            "Thoughts on the new TPS report formatting:\n\nHonestly, I don't see why we had to change the margins.\nIt's taking me an extra 45 minutes every Friday just to get the headers to align.\nDoes anybody actually read the executive summary section anyway?",
+            "Expense Report Justification:\n\nThe $45.50 charge at Chili's was for a necessary team-building alignment lunch.\nWe discussed synergistic cross-pollination of our core competencies.\n(And we had the Awesome Blossom)."
+        ];
+
+        const decelTasks = [
+            `document.getElementById('decel-1-1').innerText = "BUDGET_REV"; document.getElementById('decel-2-1').innerText = "-$4.5K"; document.getElementById('decel-3-1').innerText = "PENDING_BARB";`,
+            `document.getElementById('decel-1-0').innerText = "PTO_DAYS"; document.getElementById('decel-1-1').innerText = "4"; document.getElementById('decel-2-0').innerText = "SICK_DAYS"; document.getElementById('decel-2-1').innerText = "1.5";`,
+            `document.getElementById('decel-4-2').innerText = "ERR:#REF"; document.getElementById('decel-4-3').innerText = "ERR:#REF"; document.getElementById('decel-5-2').style.backgroundColor = "yellow";`,
+            `document.getElementById('decel-1-0').innerText = "PAPER_CLIPS"; document.getElementById('decel-1-1').innerText = "140"; document.getElementById('decel-2-0').innerText = "STAPLES"; document.getElementById('decel-2-1').innerText = "LOW";`,
+            `document.getElementById('decel-2-3').innerText = "FANTASY_PTS"; document.getElementById('decel-2-4').innerText = "114.5"; document.getElementById('decel-3-3').innerText = "RANK"; document.getElementById('decel-3-4').innerText = "4th";`,
+            `document.getElementById('decel-1-1').innerText = "Q3_GOAL"; document.getElementById('decel-2-1').innerText = "MISSED"; document.getElementById('decel-3-1').innerText = "EXCUSE: SERVER";`,
+            `for(let i=0; i<3; i++) { const c = document.getElementById(\`decel-\${Math.floor(Math.random() * 5) + 2}-\${Math.floor(Math.random() * 2) + 1}\`); if (c) c.innerText = (Math.random() * 10).toFixed(0); }`
+        ];
+
+        const emails = [
+            {
+                sender: "Jenna S. (Vibe Architect)", subject: "Paradigm Shift & End-of-Week Cadence", content: `
+            <div style="border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 10px;">
+                <strong>From:</strong> Jenna S. (Vibe Architect)<br>
+                <strong>Sent:</strong> Today, 6:47 PM<br>
+                <strong>To:</strong> Optimization Team<br>
+                <strong>Subject:</strong> Paradigm Shift & End-of-Week Cadence
+            </div>
+            <p>Hi team, circling back on the action items!</p>
+            <p>My bandwidth is incredibly limited today so I'm only doing low-impact synergies. Can we adjust the milestone metrics to feel a bit more agile? The recent sync felt like we were boil-the-ocean heavy.</p>
+            <p>Thanks,</p>
+            <p style="color: #666; font-size: 11px;">
+            --<br>Jenna S. (She/They/It)<br>Culture & Vibe Architect | <em>Certified Scrum Master Agile™</em><br>🧠 Exploring adult-diagnosed ADHD | 🌿 Plant Parent<br>
+            <em>I acknowledge that I am sending this email from the stolen ancestral lands of the Lenape people.</em><br>
+            <em>*Please excuse brief replies—I only check email for 14 minutes a day for boundary setting.*</em>
+            </p>
+            `},
+            {
+                sender: "Todd Packer", subject: "RE: Breakroom Microwave Usage", content: `
+            <div style="border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 10px;">
+                <strong>From:</strong> Todd Packer<br>
+                <strong>Sent:</strong> Today, 2:15 PM<br>
+                <strong>To:</strong> All Staff<br>
+                <strong>Subject:</strong> RE: Breakroom Microwave Usage
+            </div>
+            <p>To whoever left the passive-aggressive note about my Tupperware:</p>
+            <p>I have a macro deficiency and my doctor says I need high omega-3s for my joint pain. If you have a problem with the tuna smell, maybe don't "hot desk" right next to the kitchenette.</p>
+            <p>Todd AKA THE Todd AKA Toderick</p>
+            <p style="color: #666; font-size: 11px;">
+            --<br>Todd P. (He/Him)<br>Regional Manager of Synergy Growth<br><em>Sent from my iPhone. Please forgive typos, I am probably driving.</em>
+            </p>
+            `},
+            {
+                sender: "Helpdesk IT (Alex)", subject: "Ticket #49281 updated (ACTION REQUIRED)", content: `
+            <div style="border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 10px;">
+                <strong>From:</strong> Helpdesk IT (Alex)<br>
+                <strong>Sent:</strong> Today, 11:30 AM<br>
+                <strong>To:</strong> You<br>
+                <strong>Subject:</strong> Ticket #49281 updated (ACTION REQUIRED)
+            </div>
+            <p>Hello,</p>
+            <p>Your ticket "Keyboard spacebar is sticking" has been updated.</p>
+            <p><strong>Status changed:</strong> IN PROGRESS -> PENDING USER CONFIRMATION</p>
+            <p><strong>Notes:</strong> We remotely scanned your machine for crumb particulates. Please reboot 3 times and see if the issue persists. Ticket auto-resolves in 12 hours.</p>
+            <p style="color: #666; font-size: 11px;">
+            --<br>Alex M. (They/Them)<br>Support Technician Level 1.5<br>
+            <em>*My working hours may not be your working hours. Please do not feel obligated to reply outside of your 9-to-5 window. I am fiercely protecting my peace.*</em><br>
+            <em>(Dx: Dyslexic / AudHD - please allow 3-5 business days for conceptual parsing)</em>
+            </p>
+            `},
+            {
+                sender: "Greg (Accounting)", subject: "Fantasy Football - Trade offer", content: `
+            <div style="border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 10px;">
+                <strong>From:</strong> Greg (Accounting)<br>
+                <strong>Sent:</strong> Yesterday, 4:55 PM<br>
+                <strong>To:</strong> You<br>
+                <strong>Subject:</strong> Fantasy Football - Trade offer
+            </div>
+            <p>Hey man,</p>
+            <p>I know my RB1 just tore his ACL, but hear me out. If I give you my backup kicker and a 3rd string WR, will you give me McCaffrey? The trade analyzer says it's fair if you squint.</p>
+            <p>Pls. I'm 1-6.</p>
+            <p style="color: #666; font-size: 11px;">
+            --<br>Greg (He/Him)<br>Accounts Receivable Associate<br><em>“You miss 100% of the shots you don’t take.” - Wayne Gretzky - Michael Scott</em>
+            </p>
+            `},
+            {
+                sender: "HR Department (Sarah)", subject: "Mandatory Training: Cyber Awareness", content: `
+            <div style="border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 10px;">
+                <strong>From:</strong> HR Department (Sarah)<br>
+                <strong>Sent:</strong> Yesterday, 9:00 AM<br>
+                <strong>To:</strong> All Staff<br>
+                <strong>Subject:</strong> Mandatory Training: Cyber Awareness
+            </div>
+            <p>Team,</p>
+            <p>Please complete the mandatory 4-hour "Cyber Awareness in the Modern Office" video series by EOD Friday.</p>
+            <p>The videos cannot be skipped or played at 2x speed. Yes, we disabled the fast-forward button. No, playing it muted in the background does not count. We check.</p>
+            <p style="color: #666; font-size: 11px;">
+            --<br>Sarah K. (She/Her)<br>People Ops & Holistic Compliance Lead<br>
+            ☁️ Type 2 Enneagram | ☕️ Fueled by Iced Oat Matcha<br>
+            <em>We respectfully acknowledge our corporate headquarters reside on unceded territory.</em><br>
+            <em>*Reminder: Friday is optional "wear jeans" day if you donated $5 to the synergy fund.*</em>
+            </p>
+            `},
+            {
+                sender: "Barbara (Legal)", subject: "RE: Font Color Approval", content: `
+            <div style="border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 10px;">
+                <strong>From:</strong> Barbara (Legal)<br>
+                <strong>Sent:</strong> Tuesday, 3:22 PM<br>
+                <strong>To:</strong> You<br>
+                <strong>Subject:</strong> RE: Font Color Approval
+            </div>
+            <p>I am out of the office on a digital detox meditation retreat from Oct 12th through Nov 4th. I will have no access to screens.</p>
+            <p>If this is an emergency, please contact my assistant, who is also on leave.</p>
+            <br>
+            <p><em>Autoreply</em></p>
+            `},
+            {
+                sender: "System Administrator", subject: "Inbox near capacity", content: `
+            <div style="border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 10px;">
+                <strong>From:</strong> System Administrator<br>
+                <strong>Sent:</strong> Sunday, 12:01 AM<br>
+                <strong>To:</strong> You<br>
+                <strong>Subject:</strong> Inbox near capacity
+            </div>
+            <p>Your mailbox has reached 98% of its 50MB allocated limit.</p>
+            <p>Please delete older items. Failure to comply will result in the inability to send or receive new emails, which may impact your KPI score.</p>
+            `},
+            {
+                sender: "Marcus (Growth Hacker)", subject: "Brain-sync on new KPIs", content: `
+            <div style="border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 10px;">
+                <strong>From:</strong> Marcus (Growth Hacker)<br>
+                <strong>Sent:</strong> Today, 9:15 AM<br>
+                <strong>To:</strong> Optimization Team<br>
+                <strong>Subject:</strong> Brain-sync on new KPIs
+            </div>
+            <p>Team, let's unpack these new metrics over a quick 15-min jam session.</p>
+            <p>I feel like we're optimizing for output rather than *outcomes*. Can we leverage our learnings to create a more bespoke synergy?</p>
+            <p style="color: #666; font-size: 11px;">
+            --<br>Marcus T. (He/They)<br>Growth Marketing Ninja 🥷<br>
+            <em>Currently reading: "Dare to Lead" by Brené Brown.</em><br>
+            <em>*Pardon my brevity, I am typing this on my standing-desk treadmill.*</em>
+            </p>
+            `},
+            {
+                sender: "Office Management", subject: "REFRIGERATOR CLEAN OUT - LAST WARNING!", content: `
+            <div style="border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 10px;">
+                <strong>From:</strong> Office Management<br>
+                <strong>Sent:</strong> Yesterday, 4:45 PM<br>
+                <strong>To:</strong> All Staff<br>
+                <strong>Subject:</strong> REFRIGERATOR CLEAN OUT - LAST WARNING!
+            </div>
+            <p>At 5:00 PM today, EVERYTHING in the fridge will be thrown away. No exceptions.</p>
+            <p>If you have any emotional attachment to your Pyrex containers, I suggest you claim them now.</p>
+            <p style="color: #666; font-size: 11px;">
+            --<br>Helen (She/Her)<br>Facilities Lead<br>
+            <em>Please consider the environment before printing this email.</em><br>
+            <em>We are situated on the traditional lands of the indigenous peoples.</em>
+            </p>
+            `},
+            {
+                sender: "Chelsea (Design Team)", subject: "Feedback Request: Logo redesign v14.final_final", content: `
+            <div style="border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 10px;">
+                <strong>From:</strong> Chelsea (Design Team)<br>
+                <strong>Sent:</strong> Tuesday, 11:15 AM<br>
+                <strong>To:</strong> Marketing All<br>
+                <strong>Subject:</strong> Feedback Request: Logo redesign v14.final_final
+            </div>
+            <p>Hey fam,</p>
+            <p>The client said they wanted the logo to "pop" more, while remaining "understated." I added a drop shadow to the Helvetica font. Is this too chaotic?</p>
+            <p style="color: #666; font-size: 11px;">
+            --<br>Chelsea M. (She/Her)<br>Junior UI/UX Artisan<br>
+            🎨 Visualizing empathy through pixels.<br>
+            <em>*Reminder: My Meyers-Briggs is INFP, please deliver critical feedback gently.*</em><br>
+            <em>*I acknowledge that I am breathing air on unceded lands.*</em>
+            </p>
+            `},
+            {
+                sender: "Corporate Wellness Team", subject: "Mandatory 'Fun' Event Tomorrow!", content: `
+            <div style="border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 10px;">
+                <strong>From:</strong> Corporate Wellness Team<br>
+                <strong>Sent:</strong> Monday, 8:00 AM<br>
+                <strong>To:</strong> All Staff<br>
+                <strong>Subject:</strong> Mandatory 'Fun' Event Tomorrow!
+            </div>
+            <p>Don't forget! Tomorrow at 3:00 PM in the main conference room is our mandatory team-building icebreaker!</p>
+            <p>We'll be doing trust falls and sharing our "rose and thorn" from the week. Attendance will be taken.</p>
+            <p style="color: #666; font-size: 11px;">
+            --<br>The Wellness Committee<br>
+            <em>Fostering artificial connection out of genuine obligation since 2019.</em>
+            </p>
+            `},
+            {
+                sender: "Dave (Sales)", subject: "Who took my mug?", content: `
+            <div style="border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 10px;">
+                <strong>From:</strong> Dave (Sales)<br>
+                <strong>Sent:</strong> Today, 10:20 AM<br>
+                <strong>To:</strong> All Staff<br>
+                <strong>Subject:</strong> Who took my mug?
+            </div>
+            <p>Seriously, whoever took my "World's Okayest Boss" mug from the drying rack, please put it back on my desk.</p>
+            <p>It was a gift from my dog.</p>
+            <p style="color: #666; font-size: 11px;">
+            --<br>Dave R. (He/Him)<br>VP of Regional Synergy Strategies<br>
+            <em>Golf is life. The rest is just details. ⛳️</em>
+            </p>
+            `},
+            {
+                sender: "Security Alerts", subject: "URGENT: Phishing Test Results", content: `
+            <div style="border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 10px;">
+                <strong>From:</strong> Security Alerts<br>
+                <strong>Sent:</strong> Friday, 4:59 PM<br>
+                <strong>To:</strong> You<br>
+                <strong>Subject:</strong> URGENT: Phishing Test Results
+            </div>
+            <p>You recently clicked a link in an email disguised as a free pizza offer from HR.</p>
+            <p>This was a simulated phishing attack. Because you fell for it, you have been enrolled in remedial security training. Please complete by Monday morning.</p>
+            `},
+            {
+                sender: "Kevin (Engineering)", subject: "Re: Need a quick favor...", content: `
+            <div style="border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 10px;">
+                <strong>From:</strong> Kevin (Engineering)<br>
+                <strong>Sent:</strong> Today, 1:45 PM<br>
+                <strong>To:</strong> You<br>
+                <strong>Subject:</strong> Re: Need a quick favor...
+            </div>
+            <p>No.</p>
+            <p style="color: #666; font-size: 11px;">
+            --<br>Kevin (Any/All)<br>Staff Architect<br>
+            <em>"I am not ignoring you, I am prioritizing my mental bandwidth."</em><br>
+            <em>*Please do not use Slack for asynchronous comms. Jira tickets only.*</em>
+            </p>
+            `}
+        ];
+
+        const outboundEmails = [
+            {
+                sender: "You", subject: "Re: Action Items from Sync", content: `
+            <div style="border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 10px;">
+                <strong>From:</strong> You<br>
+                <strong>Sent:</strong> Today, 10:14 AM<br>
+                <strong>To:</strong> Optimization Team<br>
+                <strong>Subject:</strong> Re: Action Items from Sync
+            </div>
+            <p>Thanks for flagging this! Just looping myself in here to follow along.</p>
+            <p>Let's make sure we're aligned before we push any deliverables to staging. I'll circle back next week when my bandwidth opens up.</p>
+            `},
+            {
+                sender: "You", subject: "Following up on the follow-up", content: `
+            <div style="border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 10px;">
+                <strong>From:</strong> You<br>
+                <strong>Sent:</strong> Yesterday, 3:30 PM<br>
+                <strong>To:</strong> Dave (Sales)<br>
+                <strong>Subject:</strong> Following up on the follow-up
+            </div>
+            <p>Hey Dave,</p>
+            <p>Bumping this to the top of your inbox. Let me know if you need anything from my end to unblock this.</p>
+            `},
+            {
+                sender: "You", subject: "Checking in - No action needed", content: `
+            <div style="border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 10px;">
+                <strong>From:</strong> You<br>
+                <strong>Sent:</strong> Tuesday, 11:45 AM<br>
+                <strong>To:</strong> Todd Packer<br>
+                <strong>Subject:</strong> Checking in - No action needed
+            </div>
+            <p>Todd,</p>
+            <p>Just a quick ping to see how those numbers are looking. Feel free to hit me up offline if it's easier to chat live.</p>
+            `},
+            {
+                sender: "You", subject: "Re: Need a quick favor...", content: `
+            <div style="border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 10px;">
+                <strong>From:</strong> You<br>
+                <strong>Sent:</strong> Today, 1:44 PM<br>
+                <strong>To:</strong> Kevin (Engineering)<br>
+                <strong>Subject:</strong> Re: Need a quick favor...
+            </div>
+            <p>Hey man, can you submit that PR for me? My environment is totally borked today and IT hasn't responded to my ticket.</p>
+            `},
+            {
+                sender: "You", subject: "Out of Office Request", content: `
+            <div style="border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 10px;">
+                <strong>From:</strong> You<br>
+                <strong>Sent:</strong> Monday, 9:02 AM<br>
+                <strong>To:</strong> HR Department<br>
+                <strong>Subject:</strong> Out of Office Request
+            </div>
+            <p>Submitting a retro-active half-day sick leave for last Friday afternoon. I had a suspected migraine aura and needed to lay down in a dark room.</p>
+            `},
+            {
+                sender: "You", subject: "Re: Brain-sync on new KPIs", content: `
+            <div style="border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 10px;">
+                <strong>From:</strong> You<br>
+                <strong>Sent:</strong> Today, 9:20 AM<br>
+                <strong>To:</strong> Marcus (Growth Hacker)<br>
+                <strong>Subject:</strong> Re: Brain-sync on new KPIs
+            </div>
+            <p>Marcus,</p>
+            <p>Love this framing. I'm double booked during that window but I strongly agree in principal. Let's touch base end of week to operationalize.</p>
+            `},
+            {
+                sender: "You", subject: "IT Ticket Update: Spacebar", content: `
+            <div style="border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 10px;">
+                <strong>From:</strong> You<br>
+                <strong>Sent:</strong> Today, 11:35 AM<br>
+                <strong>To:</strong> Helpdesk IT (Alex)<br>
+                <strong>Subject:</strong> IT Ticket Update: Spacebar
+            </div>
+            <p>Still broken. I rebooted four times and it actually seems worse now. It's completely blocking my workflow today.</p>
+            `}
+        ];
+
+        /** STATE AND ANIMATION **/
+        const cursor = document.getElementById('cursor');
+        const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+        async function mouseMove(x, y) {
+            cursor.style.left = x + 'px'; cursor.style.top = y + 'px';
+            await sleep(750);
+        }
+
+        async function mouseClick(el) {
+            const r = el.getBoundingClientRect();
+            await mouseMove(r.left + r.width / 2, r.top + r.height / 2);
+            cursor.classList.add('clicking'); el.classList.add('sim-active');
+            await sleep(150);
+            cursor.classList.remove('clicking'); el.classList.remove('sim-active');
+            await sleep(300);
+        }
+
+        async function mouseDouble(el) {
+            const r = el.getBoundingClientRect();
+            await mouseMove(r.left + r.width / 2, r.top + r.height / 2);
+
+            el.classList.add('selected');
+
+            cursor.classList.add('clicking'); await sleep(80); cursor.classList.remove('clicking');
+            await sleep(100);
+            cursor.classList.add('clicking'); await sleep(80); cursor.classList.remove('clicking');
+
+            await sleep(300);
+            el.classList.remove('selected');
+        }
+
+        async function typeIn(el, text) {
+            el.innerText = "";
+            for (let i = 0; i < text.length; i++) {
+                if (text[i] === '\n') { el.innerHTML += '<br>'; }
+                else { el.innerHTML += text[i]; }
+                await sleep(20 + Math.random() * 50);
+            }
+        }
+
+        const appState = {
+            'win-solitary': { open: false, icon: 'icon-solitary' },
+            'win-worsed': { open: false, icon: 'icon-worsed' },
+            'win-decel': { open: false, icon: 'icon-decel' },
+            'win-outlook': { open: false, icon: 'icon-outlook' },
+            'win-ignorer': { open: false, icon: 'icon-ignorer' }
+        };
+
+        async function openApp(id) {
+            if (appState[id].open) return;
+            // Double click icon
+            await mouseDouble(document.getElementById(appState[id].icon));
+
+            const win = document.getElementById(id);
+            // Random placement for randomness feel across the full screen
+            const hRange = typeof window !== 'undefined' ? window.innerHeight - 400 : 400;
+            const wRange = typeof window !== 'undefined' ? window.innerWidth - 600 : 600;
+            const topOffset = 20 + Math.random() * Math.max(100, hRange);
+            const leftOffset = 100 + Math.random() * Math.max(200, wRange - 100);
+            win.style.top = topOffset + 'px';
+            win.style.left = leftOffset + 'px';
+
+            win.classList.add('active-win');
+            win.style.zIndex = Math.floor(Date.now() / 1000);
+            appState[id].open = true;
+            await sleep(500);
+        }
+
+        async function closeApp(id) {
+            if (!appState[id].open) return;
+            const win = document.getElementById(id);
+            const closeBtn = win.querySelector('.win-close-btn');
+            await mouseClick(closeBtn);
+            win.classList.remove('active-win');
+            appState[id].open = false;
+        }
+
+        async function focusApp(id) {
+            if (!appState[id].open) return;
+            const win = document.getElementById(id);
+            win.style.zIndex = Math.floor(Date.now() / 1000);
+            await mouseMove(win.offsetLeft + 100, win.offsetTop + 10);
+            await sleep(400);
+        }
+
+        // Init Decel
+        let dGrid = '<div class="decel-cell decel-header"></div><div class="decel-cell decel-header">A</div><div class="decel-cell decel-header">B</div><div class="decel-cell decel-header">C</div><div class="decel-cell decel-header">D</div><div class="decel-cell decel-header">E</div>';
+        for (let i = 1; i < 15; i++) {
+            dGrid += `<div class="decel-cell decel-header">${i}</div>`;
+            for (let j = 0; j < 5; j++) dGrid += `<div class="decel-cell" id="decel-${i}-${j}"></div>`;
+        }
+        document.getElementById('decel-grid').innerHTML = dGrid;
+
+        // Init Solitary (handled dynamically on play)
+
+        // Sequencer Event Loop
+        async function runSequence() {
+            cursor.style.left = '50%'; cursor.style.top = '50%';
+            await sleep(1000);
+
+            while (true) {
+                const appIds = Object.keys(appState);
+                const closedApps = appIds.filter(id => !appState[id].open);
+                const openApps = appIds.filter(id => appState[id].open);
+
+                // Decide action: 40% open new, 40% interact with open, 20% close open
+                const rand = Math.random();
+
+                if (rand < 0.4 && closedApps.length > 0) {
+                    const target = closedApps[Math.floor(Math.random() * closedApps.length)];
+                    await openApp(target);
+                }
+                else if (rand >= 0.4 && rand < 0.8 && openApps.length > 0) {
+                    const target = openApps[Math.floor(Math.random() * openApps.length)];
+                    await focusApp(target);
+
+                    if (target === 'win-worsed') {
+                        await typeIn(document.getElementById('worsed-body'), memos[Math.floor(Math.random() * memos.length)]);
+                    }
+                    else if (target === 'win-decel') {
+                        // Clear grid first
+                        for (let i = 1; i < 10; i++) {
+                            for (let j = 0; j < 5; j++) {
+                                const c = document.getElementById(`decel-${i}-${j}`);
+                                if (c) { c.innerText = ""; c.style.backgroundColor = "white"; }
+                            }
+                        }
+                        // Execute random decel task snippet
+                        const scriptRun = new Function(decelTasks[Math.floor(Math.random() * decelTasks.length)]);
+                        scriptRun();
+                    }
+                    else if (target === 'win-outlook') {
+                        const viewState = Math.random();
+                        const mainPane = document.getElementById('outlook-main-pane');
+                        const calPane = document.getElementById('outlook-calendar-view');
+                        const reader = document.getElementById('outlook-reader');
+                        const msgItem = document.getElementById('inbox-msg-1');
+
+                        document.getElementById('sidebar-inbox').style.fontWeight = 'normal';
+                        document.getElementById('sidebar-sent').style.fontWeight = 'normal';
+                        document.getElementById('sidebar-calendar').style.fontWeight = 'normal';
+
+                        if (viewState < 0.33) {
+                            mainPane.style.display = 'flex';
+                            calPane.style.display = 'none';
+                            document.getElementById('sidebar-inbox').style.fontWeight = 'bold';
+
+                            const emailData = emails[Math.floor(Math.random() * emails.length)];
+                            msgItem.innerHTML = `<div style="width: 15px;">✉️</div><div style="flex: 1; font-weight: bold; overflow: hidden; white-space: nowrap;">${emailData.sender}</div><div style="flex: 2; font-weight: bold; overflow: hidden; white-space: nowrap;">${emailData.subject}</div><div style="width: 60px;">New</div>`;
+                            await mouseClick(msgItem);
+                            msgItem.classList.add('open');
+                            reader.innerHTML = emailData.content;
+                            await sleep(16000);
+                            msgItem.classList.remove('open');
+                        } else if (viewState < 0.66) {
+                            mainPane.style.display = 'flex';
+                            calPane.style.display = 'none';
+                            document.getElementById('sidebar-sent').style.fontWeight = 'bold';
+
+                            const emailData = outboundEmails[Math.floor(Math.random() * outboundEmails.length)];
+                            msgItem.innerHTML = `<div style="width: 15px;">✉️</div><div style="flex: 1; font-weight: bold; overflow: hidden; white-space: nowrap;">${emailData.sender}</div><div style="flex: 2; font-weight: bold; overflow: hidden; white-space: nowrap;">${emailData.subject}</div><div style="width: 60px;">Sent</div>`;
+                            await mouseClick(msgItem);
+                            msgItem.classList.add('open');
+                            reader.innerHTML = emailData.content;
+                            await sleep(16000);
+                            msgItem.classList.remove('open');
+                        } else {
+                            mainPane.style.display = 'none';
+                            calPane.style.display = 'block';
+                            document.getElementById('sidebar-calendar').style.fontWeight = 'bold';
+
+                            let calHtml = '<div style="display:grid; grid-template-columns: 50px 1fr; gap:2px;">';
+                            const hours = ['8 AM', '9 AM', '10 AM', '11 AM', '12 PM', '1 PM', '2 PM', '3 PM', '4 PM', '5 PM'];
+                            const meetings = ['Sync on Synergy', 'Touchbase', '1:1 with Todd', 'Growth Marketing Sync', 'Action Items Review', 'Post-mortem', 'All-hands', 'Coffee Chat', 'Performance Review'];
+
+                            hours.forEach(h => {
+                                calHtml += `<div style="text-align:right; padding-right:5px; color:#555; border-bottom:1px solid #eee; font-size:11px;">${h}</div>`;
+                                calHtml += `<div style="position:relative; height:40px; border-bottom:1px solid #eee; background:#fafafa;">`;
+                                const evts = Math.floor(Math.random() * 4);
+                                for (let e = 0; e < evts; e++) {
+                                    const m = meetings[Math.floor(Math.random() * meetings.length)];
+                                    const top = Math.random() * 20;
+                                    const height = 20 + Math.random() * 30;
+                                    const left = Math.random() * 50;
+                                    const width = 80 - left;
+                                    const c = ['#cce5ff', '#d4edda', '#fff3cd', '#f8d7da', '#e2e3e5'][Math.floor(Math.random() * 5)];
+                                    calHtml += `<div style="position:absolute; top:${top}px; left:${left}%; width:${width}%; height:${height}px; background:${c}; border:1px solid #999; border-left:3px solid #0055ff; padding:2px; font-size:9px; overflow:hidden; box-shadow:1px 1px 3px rgba(0,0,0,0.2); z-index:${Math.floor(Math.random() * 10)}">${m}</div>`;
+                                }
+                                calHtml += `</div>`;
+                            });
+                            calHtml += '</div>';
+                            calPane.innerHTML = calHtml;
+
+                            await sleep(2000);
+                            calPane.scrollTop = 50;
+                            await sleep(2000);
+                            calPane.scrollTop = 150;
+                            await sleep(12000);
+                        }
+                    }
+                    else if (target === 'win-solitary') {
+                        const f = document.getElementById('sol-field');
+                        f.innerHTML = '';
+                        const suits = ['♥', '♦', '♣', '♠'];
+                        const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+                        const numCards = Math.floor(Math.random() * 6) + 3;
+                        for (let i = 0; i < numCards; i++) {
+                            const suit = suits[Math.floor(Math.random() * suits.length)];
+                            const rank = ranks[Math.floor(Math.random() * ranks.length)];
+                            const isRed = suit === '♥' || suit === '♦';
+                            const card = document.createElement('div');
+                            card.className = 'sol-card' + (isRed ? ' red' : '');
+                            card.innerHTML = `<div class="sol-card-mini">${rank}<br>${suit}</div><div class="sol-card-large">${suit}</div>`;
+                            card.style.left = (20 + i * 25) + 'px';
+                            card.style.top = (20 + i * 20) + 'px';
+                            card.style.zIndex = i;
+                            f.appendChild(card);
+                            await sleep(200);
+                        }
+                        await sleep(1500);
+                    }
+                    else if (target === 'win-ignorer') {
+                        const content = document.getElementById('ignorer-content');
+                        await sleep(2000);
+                        content.scrollTop = 150;
+                        await sleep(3000);
+                        content.scrollTop = 300;
+                        await sleep(8000);
+                        content.scrollTop = 0;
+                    }
+                }
+                else if (openApps.length > 0) {
+                    const target = openApps[Math.floor(Math.random() * openApps.length)];
+                    await focusApp(target);
+                    await closeApp(target);
+                }
+
+                await sleep(1000 + Math.random() * 1000);
+            }
+        }
+
+        runSequence();
+    </script>
+</body>
+
+</html>
